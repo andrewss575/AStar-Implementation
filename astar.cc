@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <vector>
 #include <cmath>
+#include <unordered_set>
 //this is where I start to implemeent A*
 
 //first, I want to store the nodes in a data structure. 
@@ -34,6 +35,42 @@ std::unordered_map<std::pair<int, int>, double, pair_hash> EuDistance(
         eu_distance.insert({curr.first, distance});
     }
     return eu_distance; // Return the map with all distances
+}
+
+double actual_cost(std::pair<int, int> currNode, std::pair<int, int> neighborNode) {
+    int xdiff = currNode.first - neighborNode.first;
+    int ydiff = currNode.second - neighborNode.second;
+    //might have to chnage depenidng how the front-end is
+    double distance = std::sqrt(std::pow(xdiff, 2) + std::pow(ydiff, 2));
+    return distance;
+}
+
+
+double cost(
+    const std::unordered_map<std::pair<int, int>, double, pair_hash>& eu_distance,
+    const std::unordered_set<std::pair<int, int>, pair_hash>& explored_set,
+    const std::pair<int, int>& possible_node) {
+    
+    double cost_tracker = 0.0;
+
+    // Iterator for the unordered set
+    auto it = explored_set.begin();
+    while (it != explored_set.end()) {
+        auto current = *it; // Current element
+        ++it; // Move to the next element
+        
+        if (it == explored_set.end()) {
+            // If at the end of set, add heuristic cost
+            auto hcost = eu_distance.find(possible_node);
+            cost_tracker += hcost->second;
+        } else {
+             // If a next element exists, calculate the actual cost
+            auto next = *it;
+            cost_tracker += actual_cost(current, next);
+        }
+    }
+    return cost_tracker;
+
 }
 
 int main() {
