@@ -3,15 +3,19 @@
 #include <vector>
 #include <cmath>
 #include <unordered_set>
+#include <queue>
 //this is where I start to implemeent A*
 
 //first, I want to store the nodes in a data structure. 
 //I am going to use a map where the key is a pair of the coordinates, while the value is a vector of coordinates that are the neighbors
 
-#include <iostream>
-#include <unordered_map>
-#include <vector>
-#include <cmath>
+// Custom comparator for the priority queue
+struct Compare {
+    bool operator()(const std::pair<std::pair<int, int>, double>& a,
+                    const std::pair<std::pair<int, int>, double>& b) const {
+        return a.second > b.second; // Min-heap: smaller values have higher priority
+    }
+};
 
 // Define the custom hash function for std::pair<int, int>
 struct pair_hash {
@@ -45,6 +49,9 @@ double actual_cost(std::pair<int, int> currNode, std::pair<int, int> neighborNod
     return distance;
 }
 
+std::vector<std::pair<int, int>> GetNeighbors(const std::unordered_map<std::pair<int, int>, std::vector<std::pair<int, int>>, pair_hash>& graph, std::pair<int, int> node) {
+    return graph.find(node)->second;
+}
 
 double cost(
     const std::unordered_map<std::pair<int, int>, double, pair_hash>& eu_distance,
@@ -100,17 +107,48 @@ int main() {
         {{7, 3},  {{8, 4}, {5, 9}, {7, 2}}}
     };
 
+    std::pair<int, int> startNode = {5,6};
     // Define the goal node
     std::pair<int, int> goalNode = {11, 3};
 
     // Calculate Euclidean distances from all nodes to the goal node
     std::unordered_map<std::pair<int, int>, double, pair_hash> distances = EuDistance(graph, goalNode);
 
-    // Print the Euclidean distances
-    for (const auto& entry : distances) {
-        std::cout << "Node (" << entry.first.first << ", " << entry.first.second
-                  << ") -> Distance to Goal: " << entry.second << "\n";
+    // Priority queue to process map entries
+    std::priority_queue<
+        std::pair<std::pair<int, int>, double>, // Each element is a map entry
+        std::vector<std::pair<std::pair<int, int>, double>>, // Container type
+        Compare // Custom comparator
+    > frontier;
+
+    std::unordered_set<std::pair<int, int>, pair_hash> explored_set;
+    
+    while(true) {
+        if (explored_set.empty()) {
+        explored_set.insert(startNode);
+        }
+        // Ensure the set is not empty
+     // Ensure the set is not empty
+            std::pair<int, int> last_element = {-1,-1};
+
+            // Iterate through the set
+            for (const auto& element : explored_set) {
+                last_element = element; // Update to the current element
+            }
+        std::vector<std::pair<int, int>> neighbors = GetNeighbors(graph, last_element);
+
+        for (const auto& curr : neighbors) {
+        // auto last = --explored_set.end();
+            if (curr == goalNode) {
+                break;
+            }
+            frontier.push({curr, cost(distances, explored_set, curr)});
+        }
+
+        explored_set.insert(frontier.top().first);
+        frontier.pop();
     }
+
 
     return 0;
 }
